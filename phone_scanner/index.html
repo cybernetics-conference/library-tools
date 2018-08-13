@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.4.0/lodash.min.js"></script>
+  <title>Cybernetics Library Scanner</title>
+  <script type="text/javascript" src="instascan.min.js"></script>
+  <script type="text/javascript" src="scanner.js"></script>
+</head>
+<style>
+
+  body {
+    margin: 0px;
+    padding: 5vw;
+    max-width: 90vw;
+    min-height: 100vh;
+    background-color: rgb(138, 129, 152);
+     background: linear-gradient(180deg, rgb(204, 236, 220) 0%, rgb(204, 236, 220) 0%, rgba(95, 0, 143, 1) 100%); 
+  }
+
+  .flexcontainer {
+    height: fit-content;
+    display: flex;
+    /* align-items: center; this aligns vertically*/
+    justify-content: center;
+    flex-direction: row;
+  }
+
+  .logo {
+    top: -10px;
+    left: -10px;
+    width: 157px;
+    position: absolute;
+    z-index: 100;
+    margin-left: 2em;
+  }
+
+  #scannervideo {
+    max-width: 100%;
+  }
+
+  #scannervideo video {
+    max-width: 100%;
+  }
+
+</style>
+
+<body>
+  <div id="app" class="flexcontainer">
+    <div class="centerdiv">
+      <div id="header">
+        handheld scanner
+        <img class="logo" src="assets/cybernetics_library.png"></img>
+      </div>
+      <div id="scannervideo"><video id="preview" class="video-circle"></video></div>
+      
+      <div id="scanned_data">
+        STUFF HERE
+      </div>
+
+    </div>
+  </div>
+
+
+</body>
+
+</html>

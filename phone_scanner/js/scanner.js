@@ -1,183 +1,88 @@
+CyScanner = {};
 
+CyScanner.prevRawScans = [];
 
-  window.thisbook = "";
-  var globalQR;
-  var memArray;
-  var theme;
+CyScanner.getTypeAndID = function(s) {
+  // returns Type and ID, otherwise return empty string
+  // this may have to change for different formats
 
-  window.prevlink = {};
-
-  function hashCode(str) {
-    var hash = 0;
-    if (str.length == 0) return hash;
-    for (i = 0; i < str.length; i++) {
-      char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash;
+	console.log(s);
+	console.log(typeof(s));
+  var bookreg = /.*library.cybernetics.social\/checkout\/(\d+)/;
+  if(s.match(bookreg)) {
+    return { type: "book", id: s.match(bookreg)[1] };
   }
 
-
-  function isBook(s) {
-//    console.log(s);
-    if (s.includes('checkout') || s.includes('object')) {
-//      console.log("BOOK");
-      return true;
-    } else {
-      //console.log("PLOT");
-      return false;
-    }
+  var dwebreg = /DECENTRALIZEDWEB\.NET\/QR\/2018\.HTML\?BADGE=(\d+)/
+  if(s.match(dwebreg)) {
+    return { type: "dweb18badge", id: s.match(dwebreg)[1] };
   }
 
-  window.isBook = isBook;
+  // else
+  return "";
+}
 
-  function isName(s) {
-    return !isBook(s);
-  }
+CyScanner.isNewScan = function(rawScans) {
+	// we have a new scan IF:
 
-  function urlToId(s) {
-    return s.split("/")[s.split("/").length - 1];
-  }
-  window.urlToId = urlToId;
+  // we used to have one item and now we have a different one item
+	// we used to have one item and now we have two items
+  // we used to have two items and now we have a different one item 
+  // we used to have two items and now we have different two items
 
-  function parseQR(content) {
+	// WE DON'T HAVE A NEW SCAN IF:
 
+	// we used to have two items and now we have one item, one of which was part of those two items
+ // we used to have one item, and then we have the same item
+ // we used to have two items, and then we have the same two items
 
-    var res = {};
-    res.books = {};
-    res.names = {};
-    res.type = {};
+ // This is because the scanning library will flicker between recognizing two QR codes simultaneously or not
+ // if we don't handle this then holding two QR codes in front of the camera could be misunderstood as constantly having one new item, two new items, etc, etc
 
+	var sortedRawScans = rawScans.slice().sort()
 
-    content.forEach(function(d, i) {
-      if (isBook(d)) {
-        res.books[urlToId(d)] = d;
-        res.type = "book";
-//        console.log(res.type);
-      }
-      if (isName(d)) {
-        res.names[urlToId(d)] = d;
-        res.type = "name";
-//            console.log(res.type);
-      }
-    });
-    // console.log(res);
-    return res;
-  }
+	if (JSON.stringify(sortedRawScans) === JSON.stringify(CyScanner.prevRawScans)) {
+		// they're the same items
+		return false;
+	}
 
-  function sameBookTimer() {
-      window.prevlink = {};
-  };
+	if(sortedRawScans.length == 1) {
+		if(CyScanner.prevRawScans.includes(sortedRawScans[0])) {
+			return false; 
+		}
+	}
 
-  function handleScans(content) {
+	// must be true now
 
-    setTimeout(sameBookTimer, 12000);
-$("iframe").fadeIn(300);
+	CyScanner.prevRawScans = sortedRawScans;
+	return true;
 
-    var res = parseQR(content);
-    if(!(_.isEqual(window.prevlink, res))) {
-        window.prevlink = res;
-        console.log(res);
-        console.log("new book");
-        globalQR = content;
-           displayModal();
-      };
-  };
-
-  function submitLinkToApi(content) {
-    var res = parseQR(content);
-    window.restest = res;
-    // var mem = $( "#mem-id" ).html();
-    // var theme = document.getElementById("theme-id").value;
-    // var memTo = document.getElementById("mem-to-id").value;
-    var bookid = urlToId(res.books[Object.keys(res.books)[0]]);
-    // var apiurl = "https://library.cybernetics.social/connect_book_to_memory";
-
-    $.post("https://library.cybernetics.social/connect_book_to_memory",
-    {
-    "book_id": bookid,
-    "station_id": "computer1",
-    "timestamp": new Date().getTime() / 1000,
-    "memory_from": $( "#mem-id" ).html(),
-    "memory_to": document.getElementById("mem-to-id").value,
-    "theme": theme
-  },
-    function (response) {
-        console.dir(response);
-      });
-  };
+}
 
 
-  function displayModal() {
-    $("#prompt-1").fadeOut(300).delay(2000);
-    $("video").addClass( "blur grayscale" );
-    $("#prompt-2").fadeIn(400).delay(2000);
-    $("#mem-to-id").val('');
-    // TODO:
+CyScanner.processRawScans = function(rawScans, cb) {
+  // rawScans is an array containing one or more strings
 
-    var apiurl = "https://library.cybernetics.social/memories/unique";
-    $.ajax({
-      type: "GET",
-      url: apiurl,
-      contentType: "application/json; charset=utf-8",
-      dataType: "json",
-      success: function(res) {
-        console.log(res.memories_all);
-        console.log("successfully submitted!")
-        memArray = res.memories_all;
-      }
-    });
+	if(CyScanner.isNewScan(rawScans)) {
+		var processedScans = rawScans.map(CyScanner.getTypeAndID)
+		cb(processedScans);
+	}
+}
 
 
-  }
 
-  function updateIframe(content,res) {
-    var tinycaturl = "https://www.librarycat.org/lib/CyberneticsCon/item/";
+CyScanner.init = function(divid, cb) {
 
-
-    // var url = objNames[Object.keys(objNames)[0]];
-    // console.log("url: " + url);
-
-    ///////////////////////////////////////
-    var res = parseQR(content);
-    var thisbookids = Object.keys(res.books).sort()
-    console.log("This book id: " + thisbookids);
-
-    var thisbooks = thisbookids.join("+");
-    if ((thisbooks) && (window.prevbooks != thisbooks)) {
-
-      // var s = "";
-      // s += "\nBOOKs = " + thisbookids.join(", ");
-      // s += "\nNAMEs = " + Object.keys(res.names).join(", ");
-      // $("#output").html(s);
-
-      // console.log(s);
-      $("#iframe").attr("src", "https://www.librarycat.org/lib/CyberneticsCon/item/" + thisbookids[0]);
-      window.prevbooks = thisbooks;
-    }
-  }
-
-
-$(document).ready(function() {
-
-
-  let scanner = new Instascan.Scanner({
-    video: document.getElementById('preview')
+  CyScanner.scanner = new Instascan.Scanner({
+    video: document.getElementById(divid)
   });
-
-  scanner.addListener('scan', function(content) {
-    handleScans(content)
-    updateIframe(content);
-  });
-
-  function link() {
-    console.log("Link Book to Plot");
-  }
 
   Instascan.Camera.getCameras().then(function(cameras) {
     if (cameras.length > 0) {
-      scanner.start(cameras[0]);
+      CyScanner.scanner.start(cameras[0]);
+      CyScanner.scanner.addListener('scan', function(response) {
+        CyScanner.processRawScans(response, cb)
+      });
     } else {
       console.error('No cameras found.');
     }
@@ -185,68 +90,17 @@ $(document).ready(function() {
     console.error(e);
   });
 
-
-// TODO:
-//random theme
-
-
-randomTheme();
-
-$.ajax({
-  type: "GET",
-  url: "https://library.cybernetics.social/memories/unique",
-  contentType: "application/json; charset=utf-8",
-  dataType: "json",
-  success: function(res) {
-    console.log(res.memories_all);
-    console.log("successfully requested mem_from!")
-    memArray = res.memories_all;
-    var randomMem = memArray[Math.floor(Math.random()*memArray.length)];
-    $('#mem-id').html(randomMem);
-  }
-});
-
-var input = document.getElementById("mem-to-id");
-
-// Execute a function when the user releases a key on the keyboard
-input.addEventListener("keyup", function(event) {
-  // Cancel the default action, if needed
-  event.preventDefault();
-  // Number 13 is the "Enter" key on the keyboard
-  if (event.keyCode === 13) {
-    // Trigger the button element with a click
-    sendMem();
-  }
-});
-
-
-});
-
-function randomTheme(){
-themeArray = ["heart", "vision", "mouth", "body"];
-var randomTheme = themeArray[Math.floor(Math.random()*themeArray.length)];
-console.log(randomTheme);
-theme = randomTheme
-$('.theme').html(theme);
-};
-
-function sendMem() {
- submitLinkToApi(globalQR);
- randomTheme();
- $("#success").fadeIn(300).delay(2000);
-  $("#success").fadeOut(300).delay(3400);
-
-
-  setTimeout(showPrompt, 3400);
- $("#prompt-2").fadeOut(300).delay(2000);
- $("iframe").fadeOut(300);
-
-};
-
-function showPrompt(){
-  $('#mem-id').clear;
-  var randomMem = memArray[Math.floor(Math.random()*memArray.length)];
-  $('#mem-id').html(randomMem);
-  $("video").removeClass( "blur grayscale" );
-  $("#prompt-1").fadeIn(300);
 }
+
+
+$(document).ready(function() {
+
+
+  CyScanner.init('scannervid', function(scans) {
+		console.log(scans);
+//    CyScanner.processRawScans(content)
+  });
+
+});
+
+

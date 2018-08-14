@@ -3,11 +3,12 @@
 
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.4.0/lodash.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/3.4.0/lodash.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/vue/2.0.5/vue.min.js"></script>
   <title>Cybernetics Library Scanner</title>
-  <script type="text/javascript" src="instascan.min.js"></script>
-  <script type="text/javascript" src="scanner.js"></script>
+  <script type="text/javascript" src="js/instascan.min.js"></script>
+  <script type="text/javascript" src="js/scanner.js"></script>
 </head>
 <style>
 
@@ -54,14 +55,33 @@
         handheld scanner
         <img class="logo" src="assets/cybernetics_library.png"></img>
       </div>
-      <div id="scannervideo"><video id="preview" class="video-circle"></video></div>
+      <div id="scannervideo"><video id="scannervid" class="video-circle"></video></div>
       
       <div id="scanned_data">
         STUFF HERE
+        {{test}}
       </div>
 
     </div>
   </div>
+
+<script>
+var bm = new Vue({
+  el: '#app',
+  methods: {
+    onBookidChange(bookid) {
+    }
+  },
+  mounted() {
+  },
+  updated() {
+  },
+  data: {
+    scanned_books : [],
+    test : "hello"
+  }
+})
+</script>
 
 
 </body>

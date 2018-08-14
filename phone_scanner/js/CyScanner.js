@@ -93,14 +93,5 @@ CyScanner.init = function(divid, cb) {
 }
 
 
-$(document).ready(function() {
-
-
-  CyScanner.init('scannervid', function(scans) {
-		console.log(scans);
-//    CyScanner.processRawScans(content)
-  });
-
-});
 
 

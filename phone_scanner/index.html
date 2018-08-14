@@ -3,22 +3,28 @@
 
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/3.4.0/lodash.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/vue/2.0.5/vue.min.js"></script>
   <title>Cybernetics Library Scanner</title>
   <script type="text/javascript" src="js/instascan.min.js"></script>
-  <script type="text/javascript" src="js/scanner.js"></script>
+  <script type="text/javascript" src="js/CyScanner.js"></script>
+  <script type="text/javascript" src="js/Helpers.js"></script>
+  <script type="text/javascript" src="js/tablesort.min.js"></script>
+  <link href="css/tablesort.css" rel="stylesheet" type="text/css" />
+
 </head>
 <style>
 
   body {
+    font-family: 'Karla', Helvetica, Arial, sans-serif;
     margin: 0px;
     padding: 5vw;
     max-width: 90vw;
     min-height: 100vh;
     background-color: rgb(138, 129, 152);
-     background: linear-gradient(180deg, rgb(204, 236, 220) 0%, rgb(204, 236, 220) 0%, rgba(95, 0, 143, 1) 100%); 
+     background: linear-gradient(0deg, rgb(204, 236, 220) 0%, rgb(204, 236, 220) 0%, rgba(95, 0, 143, 1) 100%); 
   }
 
   .flexcontainer {
@@ -43,8 +49,40 @@
   }
 
   #scannervideo video {
-    max-width: 100%;
+    max-width: 90vw;
+    max-height: 90vw;
+    border-radius: 50%;
+    filter: grayscale(100%);
   }
+
+  .bookid {
+    font-weight: bold;
+  }
+
+  table {
+    border-collapse: collapse;
+  }
+
+  table, th, td {
+    border: 1px solid #999;
+    padding: 5px 10px;
+  }
+
+  hr {
+    border: 1px dashed black;
+  }
+
+  button#csvdownload {
+    background: linear-gradient(75deg, rgb(181, 241, 255) 0%, rgb(228, 255, 181) 100%);
+    border-radius: 1em;
+  }
+
+  #header {
+    font-weight: bold;
+    font-size: 1.5em;
+      text-align: center;
+  }
+
 
 </style>
 
@@ -52,38 +90,113 @@
   <div id="app" class="flexcontainer">
     <div class="centerdiv">
       <div id="header">
-        handheld scanner
-        <img class="logo" src="assets/cybernetics_library.png"></img>
+        CYBERNETICS LIBRARY SCANNER
       </div>
-      <div id="scannervideo"><video id="scannervid" class="video-circle"></video></div>
+      <div id="scannervideo">
+        <!--<img class="logo" src="imgs/logo_arrows.png"></img>-->
+        <video id="scannervid" class="video-circle"></video>
+      </div>
       
+      <div id="you_just_scanned">
+        <hr />
+        You just scanned:
+        <div v-for="scan in just_scanned">Type: <b>{{ scan.type }}</b>, ID: <span class="bookid">{{ scan.id }}</span></div>
+      </div>
       <div id="scanned_data">
-        STUFF HERE
-        {{test}}
+        <hr />
+        Stats on scans so far:
+        <b> {{scannedStats()}}</b>
+        <table id="data_table">
+          <thead>
+            <tr>
+              <th class="type">Type</th>
+              <th class="id">ID</th>
+              <th class="title">Title</th>
+              <th class="author">Author</th>
+              <th class="fromwhere">From Where</th>
+              <th class="url">LibraryThing URL</th>
+            </tr>
+          </thead>
+          <tr v-for="sb in scanned_books">
+            <td class="type"> {{ sb.type }} </td>
+            <td class="id"> {{ sb.id }} </td>
+            <td class="title"> {{ libThingInfo(sb, "title") }} </td>
+            <td class="author"> {{ libThingInfo(sb, "author") }} </td>
+            <td class="fromwhere"> {{ libThingInfo(sb, "fromwhere") }} </td>
+            <td class="url"> <a v-bind:href="libThingInfo(sb, 'url')">{{ libThingInfo(sb, "url") }}</a> </td>
+          </tr>
+        </table>
+        <button id="csvdownload" v-on:click="csvdownload">Download as CSV</button>
       </div>
 
     </div>
   </div>
 
 <script>
-var bm = new Vue({
+window.app = new Vue({
   el: '#app',
   methods: {
-    onBookidChange(bookid) {
-    }
+    csvdownload() {
+      var html = document.getElementById("data_table").outerHTML;
+      Helpers.export_table_to_csv(html, "scanned_items.csv");
+    },
+    scannedStats() {
+      return _.chain(app.scanned_books)
+        .groupBy("type")
+        .mapValues(function(d) { return d.length; })
+        .map(function(v,k) { return k + ": " + v; })
+        .join(" , ")
+        .value()
+    },
+		libThingInfo(book, key) {
+			var self = this;
+			var bid = book.id;
+			if(bid in self.libThingBooks) {
+				if(key in self.libThingBooks[bid]) {
+					return self.libThingBooks[bid][key]
+				}
+			}
+		}
   },
   mounted() {
+    var self = this;
+    CyScanner.init('scannervid', function(scans) {
+			// a scan just happened
+      self.just_scanned = scans;
+      scans.forEach(function(s) {
+        self.scanned_books[s.id] = s;
+        self.tablesort.refresh();
+      })
+      console.log(scans);
+			new Audio('wavs/idea.wav').play();
+
+    });
+
+    self.tablesort = new Tablesort(document.getElementById("data_table"))
+
+    Helpers.downloadCollectionDataWithCors(function(allbooks) {
+			self.libThingBooks = allbooks;
+		});
+
   },
   updated() {
   },
   data: {
-    scanned_books : [],
-    test : "hello"
+    just_scanned: [],
+    scanned_books : {},
+    test : "hello",
+		libThingBooks: {}
   }
 })
+
+
+
+
 </script>
 
 
 </body>
 
 </html>
+
+

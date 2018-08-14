@@ -66,6 +66,7 @@ Helpers.downloadCollectionDataWithCors = function(cb) {
       var books = dom_nodes.find("tr.cat_catrow");
       books.each(function(i, d) {
           var thisbook = {};
+          thisbook.bookid =  $(d).attr('id').split("_")[1];
           thisbook.url = "https://www.librarything.com" + $(d).find('.lt-title').attr('href');
           thisbook.title = $(d).find('.lt-title').html();
           if(thisbook.title) {	thisbook.title = thisbook.title.replace(/&nbsp;/gi,''); }
@@ -74,11 +75,10 @@ Helpers.downloadCollectionDataWithCors = function(cb) {
           var tags = [];
           $(d).find('.lt-tag').each(function(i, e) { tags.push($(e).html()); })
           thisbook.tags = tags.join(", ")
-          thisbook.fromwhere = $(d).find(':nth-child(9) > div > div').html()
+          thisbook.fromwhere = $(d).find('#location' + thisbook.bookid).text()
           if(thisbook.fromwhere) {	thisbook.fromwhere = thisbook.fromwhere.replace(/&nbsp;/gi,''); }
           thisbook.publication = $(d).find('.lt-publication').html()
           if(thisbook.publication) {	thisbook.publication = thisbook.publication.replace(/&nbsp;/gi,''); }
-          thisbook.bookid =  $(d).attr('id').split("_")[1];
 
           allbooks[thisbook.bookid] = thisbook;
       });

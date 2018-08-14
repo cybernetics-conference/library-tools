@@ -137,7 +137,11 @@ CUSTOMIZE BELOW
   <div class="flexcontainer" id="app">
   <div class="uidiv">
     <!--<collection-selector :collections="collections"></collection-selector>-->
-		<h2> 1. click a book title</h2>
+		<h2> 1. Enter a collection ID</h2>
+    (a 6 digit number) <br/>
+    <input id="collid" type="text"></input>
+    <button v-on:click="loadCollection">Load Collection</button>
+		<h2> 2. click a book title</h2>
     <book-selector :books="books" :thisbookid="thisbook.bookid" v-on:bookid-change=onBookidChange></book-selector>
     <save-pdf :thisbookid="thisbook.bookid" ></save-pdf>
   </div>
@@ -158,34 +162,8 @@ CUSTOMIZE BELOW
 
 </div>
 <script>
-/*
-var cs = Vue.component('collection-selector', {
-props: ["collections"],
-data: function () {
-  return {
-    count: 0,
-    collections: []
-  }
-},
-methods: {
-  collinc: function(inc) {
-    this.count += inc;
-    this.count += Object.keys(this.collections).length;
-    this.count %= Object.keys(this.collections).length;
-  }
-},
-template: `
-<div>
-  <div><button v-on:click=collinc(-1)>^</button><button v-on:click="collinc(1)">v</button></div>
-  <div v-for="(value, key, index) in collections">
-  <div v-if="index == count"><b>{{value}}</b></div>
-  <div v-else>{{value}}</div>
-  </div>
-</div>  `
-})
-*/
 
-var cs = Vue.component('book-selector', {
+var bs  = Vue.component('book-selector', {
 props: ["books", "thisbookid"],
 data: function () {
   return {
@@ -209,6 +187,8 @@ template: `
   </div>
 </div>  `
 })
+
+
 
 
 
@@ -245,7 +225,7 @@ methods: {
 },
 template: `
 <div class="save-pdf">
-	<button v-on:click="savebookmarkpdf">2. Save As PDF</button>
+	<button v-on:click="savebookmarkpdf">3. Save As PDF</button>
 </div>  `
 })
 
@@ -253,18 +233,26 @@ template: `
 var bm = new Vue({
   el: '#app',
   methods: {
-    downloadDataWithCors() {
+    loadCollection() {
+      this.isLoading = true
+      this.collectionid = $("#collid").val()
+      console.log($("#collid").val())
+      this.downloadDataWithCors(this.collectionid);
+    },
+    downloadDataWithCors(collectionid) {
 			var self = this;
-      var collectionid =  getUrlValue("collectionid");
 			var corsproxyurl = "https://cors-anywhere.herokuapp.com/";
 			var libthingurl = "http://www.librarything.com/catalog_bottom.php?view=CyberneticsCon&collection=" + collectionid + "&printable=1";
 			var geturl = corsproxyurl + libthingurl;
+      console.log(geturl);
 			$.get(geturl, function(d) {
 					var allbooks = [];
 					var dom_nodes = $($.parseHTML(d));
 					var books = dom_nodes.find("tr.cat_catrow");
 					books.each(function(i, d) {
+              window.test = $(d);
 							var thisbook = {};
+							thisbook.bookid =  $(d).attr('id').split("_")[1];
 							thisbook.title = $(d).find('.lt-title').html();
 							if(thisbook.title) {	thisbook.title = thisbook.title.replace(/&nbsp;/gi,''); }
 							thisbook.author = $(d).find('.lt-author').html();
@@ -272,11 +260,10 @@ var bm = new Vue({
 							var tags = [];
 							$(d).find('.lt-tag').each(function(i, e) { tags.push($(e).html()); })
 							thisbook.tags = tags.join(", ")
-							thisbook.fromwhere = $(d).find(':nth-child(9) > div > div').html()
+							thisbook.fromwhere = $(d).find('#location' + thisbook.bookid).text()
 							if(thisbook.fromwhere) {	thisbook.fromwhere = thisbook.fromwhere.replace(/&nbsp;/gi,''); }
 							thisbook.publication = $(d).find('.lt-publication').html()
 							if(thisbook.publication) {	thisbook.publication = thisbook.publication.replace(/&nbsp;/gi,''); }
-							thisbook.bookid =  $(d).attr('id').split("_")[1];
 
 							allbooks.push(thisbook);
 					});
@@ -292,7 +279,6 @@ var bm = new Vue({
     }
   },
   mounted() {
-    this.downloadDataWithCors()
     this.qr = new QRCode(document.getElementById("qrcode"));
   },
   updated() {
@@ -304,15 +290,16 @@ var bm = new Vue({
   data: {
     thisbook: {
       bookid: 0,
-      title: "LOADING LOADING LOADING",
-      author: "LOADING, LOADING",
-      publication: "LOADING: LOADING LOADING, 2018",
-      tags: "LOADING AND LOAIDNG",
-      source: "LOADING LOADING",
+      title: "WAITING WAITING WAITING",
+      author: "WAITING, WAITING",
+      publication: "WAITING: WAITING WAITING, 2018",
+      tags: "WAITING AND LOAIDNG",
+      source: "WAITING WAITING",
     },
     collections: [],
+    collectionid: null,
     books: [],
-    isLoading: true,
+    isLoading: false,
     qrcode: null
   }
 })

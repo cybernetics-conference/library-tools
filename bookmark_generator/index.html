@@ -242,7 +242,7 @@ var bm = new Vue({
     downloadDataWithCors(collectionid) {
 			var self = this;
 			var corsproxyurl = "https://cors-anywhere.herokuapp.com/";
-			var libthingurl = "http://www.librarything.com/catalog_bottom.php?view=CyberneticsCon&collection=" + collectionid + "&printable=1";
+			var libthingurl = "http://www.librarything.com/catalog_bottom.php?view=CyberneticsLibrary&collection=" + collectionid + "&printable=1";
 			var geturl = corsproxyurl + libthingurl;
       console.log(geturl);
 			$.get(geturl, function(d) {

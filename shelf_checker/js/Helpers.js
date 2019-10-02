@@ -57,8 +57,8 @@ document.querySelector("button").addEventListener("click", function () {
 
 Helpers.downloadCollectionDataWithCors = function(cb) {
   var corsproxyurl = "https://cors-anywhere.herokuapp.com/";
-  //var libthingurl = "http://www.librarything.com/catalog_bottom.php?view=CyberneticsCon&collection=" + collectionid + "&printable=1";
-  var libthingurl = "http://www.librarything.com/catalog_bottom.php?view=CyberneticsCon&printable=1";
+  //var libthingurl = "http://www.librarything.com/catalog_bottom.php?view=CyberneticsLibrary&collection=" + collectionid + "&printable=1";
+  var libthingurl = "http://www.librarything.com/catalog_bottom.php?view=CyberneticsLibrary&printable=1";
   var geturl = corsproxyurl + libthingurl;
   $.get(geturl, function(d) {
       var allbooks = {};
